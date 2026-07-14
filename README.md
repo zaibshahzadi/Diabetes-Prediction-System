@@ -1,4 +1,4 @@
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/46410f9e-6e87-4f2b-86ce-8be393b0d3c0" /><img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/df7ef05f-ea0b-424c-bc3f-d61e6bf4e43f" /># Diabetes Prediction System
+# Diabetes Prediction System
 
 AI-powered Diabetes Risk Prediction using Machine Learning & Flask
 
@@ -153,44 +153,21 @@ Top 10 Most Important Features:
 
 ---
 
-## Project Structure
-Diabetes-Prediction-System/
-│
-├── backend/
-│ ├── app.py # Flask application
-│ ├── requirements.txt # Python dependencies
-│ ├── diabetes_prediction_model.pkl # Trained ML model (Random Forest)
-│ ├── diabetes_scaler.pkl # Scaler for data preprocessing
-│ └── feature_columns.pkl # Feature names for prediction
-│
-├── dataset/
-│ └── diabetes_dataset1.csv # Training dataset
-│
-├── frontend/
-│ └── index (1).html # Web interface
-│
-├── images/
-│ ├── diabetic.png # Diabetic prediction UI
-│ ├── non-diabetic.png # Non-diabetic UI
-│ ├── home page 1.png # Home page screenshot
-│ └── home page 2.png # Home page screenshot 2
-│
-├── notebook/
-│ └── diabetes_detection.ipynb # Jupyter notebook for model training
-│
-├── .gitattributes # Git LFS configuration
-├── .gitignore # Git ignore file
-└── README.md # Project documentation
-
----
-
 ### Application Screenshots
 
 Home Page
 
+https://github.com/zaibshahzadi/Diabetes-Prediction-System/blob/main/home%20page%201.png
+
+https://github.com/zaibshahzadi/Diabetes-Prediction-System/blob/main/home%20page%202.png
+
 Diabetic Prediction
 
+https://github.com/zaibshahzadi/Diabetes-Prediction-System/blob/main/dibetic.png
+
 Non-Diabetic Prediction
+
+https://github.com/zaibshahzadi/Diabetes-Prediction-System/blob/main/non-dibetic.png
 
 ---
 
@@ -212,10 +189,13 @@ Performance analytics and reporting
 
 Integration with healthcare systems
 
+
 ---
 
 ### Author
 
 Zaib Shahzadi
+
 Email: zaibnaveed6@gmail.com
+
 LinkedIn: https://www.linkedin.com/in/zaib-shahzadi-bba376290/

@@ -1,5 +1,9 @@
 # Diabetes Prediction System
 
+<p align="center">
+  <img src="https://github.com/zaibshahzadi/Diabetes-Prediction-System/blob/main/github%20bannar%204.png" width="100%" />
+</p>
+
 AI-powered Diabetes Risk Prediction using Machine Learning & Flask
 
 ---

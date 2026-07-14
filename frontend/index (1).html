@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GlucoSense — Diabetes Risk Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&display=swap" rel="stylesheet"/>
+
+<style>
+/* ── RESET & TOKENS ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0e14;
+  --surface:  #111720;
+  --card:     #161d28;
+  --border:   #1e2a38;
+  --accent:   #00e5a0;
+  --accent2:  #0af;
+  --danger:   #ff4d6d;
+  --warn:     #ffbe0b;
+  --text:     #e8f0f8;
+  --muted:    #5a7390;
+  --radius:   18px;
+  --shadow:   0 24px 64px rgba(0,0,0,.6);
+  --glow:     0 0 40px rgba(0,229,160,.15);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── ANIMATED BACKGROUND ───────────────────────────────────── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.bg-orb {
+  position: fixed; border-radius: 50%; filter: blur(100px);
+  pointer-events: none; z-index: 0;
+}
+.orb1 { width: 500px; height: 500px; top: -150px; right: -100px;
+        background: rgba(0,229,160,.07); animation: drift 14s ease-in-out infinite alternate; }
+.orb2 { width: 400px; height: 400px; bottom: -100px; left: -100px;
+        background: rgba(0,170,255,.06); animation: drift 18s ease-in-out infinite alternate-reverse; }
+
+@keyframes drift { 0%{transform:translate(0,0)} 100%{transform:translate(40px,30px)} }
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto;
+  padding: 60px 24px 80px;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 56px;
+  animation: fadeUp .7s ease both;
+}
+
+.logo-mark {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 0 24px rgba(0,229,160,.35);
+}
+
+.logo-text { display: flex; flex-direction: column; }
+.logo-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.logo-text p { color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+
+.badge {
+  margin-left: auto;
+  background: rgba(0,229,160,.1);
+  border: 1px solid rgba(0,229,160,.25);
+  color: var(--accent);
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── SECTION TITLE ──────────────────────────────────────────── */
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 13px; font-weight: 300; font-style: italic;
+  color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+
+/* ── CARD ───────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 24px;
+  animation: fadeUp .6s ease both;
+}
+.card:nth-child(2){ animation-delay:.1s }
+.card:nth-child(3){ animation-delay:.2s }
+
+@keyframes fadeUp {
+  from{ opacity:0; transform:translateY(24px) }
+  to  { opacity:1; transform:translateY(0) }
+}
+
+/* ── FORM GRID ───────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+
+.field label {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field span.hint {
+  font-size: 10px; color: var(--muted); opacity: .7;
+  margin-top: -4px;
+}
+
+.field input, .field select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  width: 100%;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,229,160,.12);
+}
+.field input::placeholder { color: var(--muted); font-size: 13px; }
+
+/* ── TOGGLE PILLS ───────────────────────────────────────────── */
+.pill-group {
+  display: flex; gap: 8px;
+}
+.pill {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  user-select: none;
+}
+.pill.active {
+  background: rgba(0,229,160,.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── DIVIDER ────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 28px 0;
+}
+
+/* ── SUBMIT BUTTON ──────────────────────────────────────────── */
+.btn-predict {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent) 0%, #00c585 100%);
+  border: none; border-radius: 12px;
+  color: #0a0e14;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  box-shadow: 0 8px 32px rgba(0,229,160,.3);
+}
+.btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,229,160,.45); }
+.btn-predict:active { transform: translateY(0); }
+.btn-predict:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,0,0,.2);
+  border-top-color: #0a0e14;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESULT PANEL ───────────────────────────────────────────── */
+#result-panel {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  animation: fadeUp .5s ease both;
+  position: relative; overflow: hidden;
+}
+
+#result-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.result-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  margin-bottom: 32px;
+}
+
+.result-verdict {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px; font-weight: 800;
+  letter-spacing: -1px;
+}
+.verdict-negative { color: var(--accent); }
+.verdict-positive { color: var(--danger); }
+
+.result-sub {
+  color: var(--muted); font-size: 12px;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Risk gauge */
+.gauge-wrap {
+  width: 120px; text-align: center; flex-shrink: 0;
+}
+.gauge-label {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.gauge-ring {
+  position: relative; width: 100px; height: 100px; margin: 0 auto;
+}
+.gauge-ring svg { transform: rotate(-90deg); }
+.gauge-track { fill: none; stroke: var(--border); stroke-width: 8; }
+.gauge-fill  { fill: none; stroke-width: 8; stroke-linecap: round;
+               transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke .4s; }
+.gauge-text  {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.gauge-pct  { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+.gauge-unit { font-size: 9px; letter-spacing: 1px; color: var(--muted); }
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 28px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-box .val {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text);
+}
+.stat-box .lbl {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin-top: 4px;
+}
+
+/* Advice card */
+.advice {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.advice strong { color: var(--text); }
+.advice.danger { border-left-color: var(--danger); }
+.advice.warn   { border-left-color: var(--warn); }
+
+/* Error */
+.error-msg {
+  background: rgba(255,77,109,.08);
+  border: 1px solid rgba(255,77,109,.25);
+  border-radius: 10px;
+  color: var(--danger);
+  font-size: 13px;
+  padding: 14px 18px;
+  display: none;
+  margin-top: 12px;
+}
+
+/* ── INFO BAR ────────────────────────────────────────────────── */
+.info-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.info-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  animation: fadeUp .6s ease both;
+}
+.info-tile .icon { font-size: 20px; margin-bottom: 8px; }
+.info-tile .name { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.info-tile .val  { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-top: 2px; }
+
+/* ── DISCLAIMER ─────────────────────────────────────────────── */
+.disclaimer {
+  margin-top: 32px;
+  font-size: 11px; color: var(--muted);
+  text-align: center; line-height: 1.8;
+}
+
+/* ── FOOTER ─────────────────────────────────────────────────── */
+footer {
+  margin-top: 64px;
+  text-align: center;
+  color: var(--muted); font-size: 11px;
+  letter-spacing: 1px;
+  animation: fadeUp .8s ease .4s both;
+}
+footer span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">🩺</div>
+    <div class="logo-text">
+      <h1>GlucoSense</h1>
+      <p>Diabetes Risk Predictor</p>
+    </div>
+    <div class="badge">ML Powered</div>
+  </header>
+
+  <!-- INFO TILES -->
+  <div class="info-bar">
+    <div class="info-tile" style="animation-delay:.05s">
+      <div class="icon">🧠</div>
+      <div class="name">Models Tested</div>
+      <div class="val">5</div>
+    </div>
+    <div class="info-tile" style="animation-delay:.1s">
+      <div class="icon">📊</div>
+      <div class="name">Inputs Required</div>
+      <div class="val">4 core</div>
+    </div>
+    <div class="info-tile" style="animation-delay:.15s">
+      <div class="icon">⚡</div>
+      <div class="name">Inference</div>
+      <div class="val">&lt; 100 ms</div>
+    </div>
+    <div class="info-tile" style="animation-delay:.2s">
+      <div class="icon">🎯</div>
+      <div class="name">Algorithm</div>
+      <div class="val">Best-fit</div>
+    </div>
+  </div>
+
+  <!-- FORM CARD -->
+  <div class="card">
+    <p class="section-title">Patient Health Parameters</p>
+
+    <div class="form-grid">
+      <!-- Age -->
+      <div class="field">
+        <label for="age">Age</label>
+        <input type="number" id="age" min="1" max="120" placeholder="e.g. 45" step="1"/>
+        <span class="hint">1 – 120 years</span>
+      </div>
+
+      <!-- BMI -->
+      <div class="field">
+        <label for="bmi">BMI</label>
+        <input type="number" id="bmi" min="10" max="70" placeholder="e.g. 28.5" step="0.1"/>
+        <span class="hint">Body Mass Index</span>
+      </div>
+
+      <!-- HbA1c -->
+      <div class="field">
+        <label for="hba1c">HbA1c Level</label>
+        <input type="number" id="hba1c" min="3.5" max="15" placeholder="e.g. 6.5" step="0.1"/>
+        <span class="hint">Glycated haemoglobin %</span>
+      </div>
+
+      <!-- Blood Glucose -->
+      <div class="field">
+        <label for="glucose">Blood Glucose</label>
+        <input type="number" id="glucose" min="50" max="500" placeholder="e.g. 140" step="1"/>
+        <span class="hint">mg/dL</span>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+    <p class="section-title">Additional Factors <span style="opacity:.5">(optional)</span></p>
+
+    <div class="form-grid">
+      <!-- Hypertension -->
+      <div class="field">
+        <label>Hypertension</label>
+        <div class="pill-group" id="hypertension-group">
+          <div class="pill active" data-val="0" onclick="setPill('hypertension-group',this)">No</div>
+          <div class="pill"       data-val="1" onclick="setPill('hypertension-group',this)">Yes</div>
+        </div>
+      </div>
+
+      <!-- Heart Disease -->
+      <div class="field">
+        <label>Heart Disease</label>
+        <div class="pill-group" id="heart-group">
+          <div class="pill active" data-val="0" onclick="setPill('heart-group',this)">No</div>
+          <div class="pill"       data-val="1" onclick="setPill('heart-group',this)">Yes</div>
+        </div>
+      </div>
+
+      <!-- Gender -->
+      <div class="field">
+        <label>Gender</label>
+        <div class="pill-group" id="gender-group">
+          <div class="pill active" data-val="Male"   onclick="setPill('gender-group',this)">Male</div>
+          <div class="pill"       data-val="Female" onclick="setPill('gender-group',this)">Female</div>
+        </div>
+      </div>
+
+      <!-- Smoking -->
+      <div class="field">
+        <label>Smoking History</label>
+        <div class="pill-group" id="smoking-group">
+          <div class="pill active" data-val="0" onclick="setPill('smoking-group',this)">Never</div>
+          <div class="pill"       data-val="1" onclick="setPill('smoking-group',this)">Former/Current</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <button class="btn-predict" id="predict-btn" onclick="runPrediction()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-label">Analyse Risk →</span>
+    </button>
+
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div id="result-panel">
+    <div class="result-header">
+      <div>
+        <div class="result-verdict" id="verdict-text">—</div>
+        <div class="result-sub" id="risk-label-text">Risk Assessment</div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-label">Diabetes Risk</div>
+        <div class="gauge-ring">
+          <svg viewBox="0 0 100 100" width="100" height="100">
+            <circle class="gauge-track" cx="50" cy="50" r="42"/>
+            <circle class="gauge-fill"  cx="50" cy="50" r="42"
+                    id="gauge-fill"
+                    stroke-dasharray="264"
+                    stroke-dashoffset="264"/>
+          </svg>
+          <div class="gauge-text">
+            <span class="gauge-pct" id="gauge-pct">0%</span>
+            <span class="gauge-unit">risk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="val" id="stat-age">—</div>
+        <div class="lbl">Age</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="stat-bmi">—</div>
+        <div class="lbl">BMI</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="stat-glucose">—</div>
+        <div class="lbl">Glucose mg/dL</div>
+      </div>
+    </div>
+
+    <div class="advice" id="advice-box">
+      Loading advice…
+    </div>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <p class="disclaimer">
+    ⚠️ This tool is for <strong>educational purposes only</strong>.<br/>
+    It is not a substitute for professional medical diagnosis. Always consult a qualified healthcare provider.
+  </p>
+
+  <footer>
+    Built by <span>Zoha &amp; Zaib</span> · AI Final Project · Random Forest / Gradient Boosting
+  </footer>
+
+</div><!-- /wrapper -->
+
+<script>
+/* ── CONFIG ─────────────────────────────────────────────────── */
+const API_URL = "http://localhost:5000/predict";   // ← change if deployed
+
+/* ── PILL TOGGLE ─────────────────────────────────────────────── */
+function setPill(groupId, el) {
+  document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+function getPill(groupId) {
+  const active = document.querySelector(`#${groupId} .pill.active`);
+  return active ? active.dataset.val : null;
+}
+
+/* ── FORM VALIDATION ─────────────────────────────────────────── */
+function getNum(id) { return parseFloat(document.getElementById(id).value); }
+
+function validate() {
+  const age     = getNum('age');
+  const bmi     = getNum('bmi');
+  const hba1c   = getNum('hba1c');
+  const glucose = getNum('glucose');
+
+  if (isNaN(age)     || age < 1 || age > 120)       return "Age must be between 1 and 120.";
+  if (isNaN(bmi)     || bmi < 10 || bmi > 70)       return "BMI must be between 10 and 70.";
+  if (isNaN(hba1c)   || hba1c < 3.5 || hba1c > 15) return "HbA1c must be between 3.5 and 15.";
+  if (isNaN(glucose) || glucose < 50 || glucose > 500) return "Blood glucose must be between 50 and 500 mg/dL.";
+  return null;
+}
+
+/* ── GAUGE ANIMATION ─────────────────────────────────────────── */
+function animateGauge(pct, isDiabetic) {
+  const circ  = 2 * Math.PI * 42;   // ≈ 264
+  const offset = circ - (pct / 100) * circ;
+  const fill   = document.getElementById('gauge-fill');
+  const pctEl  = document.getElementById('gauge-pct');
+  const color  = isDiabetic
+    ? pct > 60 ? '#ff4d6d' : '#ffbe0b'
+    : '#00e5a0';
+
+  fill.style.stroke = color;
+  // Trigger reflow then animate
+  requestAnimationFrame(() => {
+    fill.style.strokeDashoffset = offset;
+  });
+
+  // Count-up number
+  let current = 0;
+  const step = pct / 60;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, pct);
+    pctEl.textContent = current.toFixed(1) + '%';
+    if (current >= pct) clearInterval(timer);
+  }, 16);
+}
+
+/* ── ADVICE COPY ─────────────────────────────────────────────── */
+function getAdvice(label, risk, hba1c, glucose) {
+  
+  // Warning flags
+  let warnings = [];
+  if (hba1c >= 6.5)        warnings.push(`🔴 HbA1c <strong>${hba1c}%</strong> — Diabetic range (normal: below 5.7%)`);
+  else if (hba1c >= 5.7)   warnings.push(`🟡 HbA1c <strong>${hba1c}%</strong> — Pre-diabetic range (normal: below 5.7%)`);
+  else                      warnings.push(`🟢 HbA1c <strong>${hba1c}%</strong> — Normal`);
+
+  if (glucose >= 126)       warnings.push(`🔴 Blood Glucose <strong>${glucose} mg/dL</strong> — Diabetic range (normal: below 100)`);
+  else if (glucose >= 100)  warnings.push(`🟡 Blood Glucose <strong>${glucose} mg/dL</strong> — Pre-diabetic range (normal: below 100)`);
+  else                      warnings.push(`🟢 Blood Glucose <strong>${glucose} mg/dL</strong> — Normal`);
+
+  let warningHTML = warnings.join('<br/>');
+
+  if (label === 'Diabetic') {
+    return `<strong>⚠️ High Risk Detected.</strong> Your markers strongly suggest diabetes.<br/><br/>
+    ${warningHTML}<br/><br/>
+    Please schedule a consultation with an endocrinologist immediately for confirmatory tests (fasting glucose, OGTT).`;
+  }
+
+  if (risk > 35) {
+    return `<strong>🟡 Moderate Risk.</strong> Not diabetic yet but some markers need attention.<br/><br/>
+    ${warningHTML}<br/><br/>
+    Consider dietary changes, increase physical activity, and get a blood panel every 6 months.`;
+  }
+
+  // Low risk but check individual markers
+  let hasHighMarker = (hba1c >= 5.7 || glucose >= 100);
+
+  if (hasHighMarker) {
+    return `<strong>✅ Low Diabetes Risk</strong> — but some markers are slightly elevated:<br/><br/>
+    ${warningHTML}<br/><br/>
+    You are not diabetic but monitor these values. Get a checkup every <strong>6-12 months</strong> and maintain a healthy diet and exercise routine.`;
+  }
+
+  return `<strong>✅ All Clear!</strong> Your metabolic markers look healthy.<br/><br/>
+  ${warningHTML}<br/><br/>
+  Keep maintaining a balanced diet and active lifestyle. Routine checkup every <strong>1-2 years</strong> is sufficient.`;
+}
+
+/* ── MAIN PREDICTION CALL ─────────────────────────────────────── */
+async function runPrediction() {
+  const btn     = document.getElementById('predict-btn');
+  const spinner = document.getElementById('spinner');
+  const label   = document.getElementById('btn-label');
+  const errBox  = document.getElementById('error-msg');
+  const panel   = document.getElementById('result-panel');
+
+  // Validate
+  const err = validate();
+  if (err) {
+    errBox.textContent = err;
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  // Collect inputs
+  const payload = {
+    age:             getNum('age'),
+    bmi:             getNum('bmi'),
+    hba1c:           getNum('hba1c'),
+    glucose:         getNum('glucose'),
+    hypertension:    parseInt(getPill('hypertension-group')),
+    heart_disease:   parseInt(getPill('heart-group')),
+    smoking_history: parseInt(getPill('smoking-group')),
+    gender:          getPill('gender-group')
+  };
+
+  // Loading state
+  btn.disabled      = true;
+  spinner.style.display = 'block';
+  label.textContent = 'Analysing…';
+  panel.style.display = 'none';
+
+  try {
+    const res  = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || `Server error ${res.status}`);
+    }
+
+    const data = await res.json();
+    displayResult(data, payload);
+
+  } catch (e) {
+    errBox.textContent = `❌ ${e.message}`;
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled          = false;
+    spinner.style.display = 'none';
+    label.textContent     = 'Analyse Risk →';
+  }
+}
+
+/* ── DISPLAY RESULT ──────────────────────────────────────────── */
+function displayResult(data, inputs) {
+  const panel    = document.getElementById('result-panel');
+  const verdict  = document.getElementById('verdict-text');
+  const riskLbl  = document.getElementById('risk-label-text');
+  const advBox   = document.getElementById('advice-box');
+  const isDiab   = data.prediction === 'Diabetic';
+
+  // Verdict
+  verdict.textContent  = data.prediction;
+  verdict.className    = 'result-verdict ' + (isDiab ? 'verdict-positive' : 'verdict-negative');
+  riskLbl.textContent  = `${data.risk_label} Risk  ·  ${data.risk_percent}% probability`;
+
+  // Stats
+  document.getElementById('stat-age').textContent     = inputs.age + ' yr';
+  document.getElementById('stat-bmi').textContent     = inputs.bmi.toFixed(1);
+  document.getElementById('stat-glucose').textContent = inputs.glucose;
+
+  // Advice
+  advBox.innerHTML  = getAdvice(data.prediction, data.risk_percent, inputs.hba1c, inputs.glucose);
+  advBox.className  = 'advice' + (isDiab ? ' danger' : data.risk_percent > 35 ? ' warn' : '');
+
+  // Show panel
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Animate gauge after paint
+  setTimeout(() => animateGauge(data.risk_percent, isDiab), 100);
+}
+</script>
+</body>
+</html>
